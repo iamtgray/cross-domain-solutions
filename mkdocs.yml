@@ -1,0 +1,82 @@
+site_name: Cross-Domain Solutions
+site_description: Understanding cross-domain solutions -- what they are, how they work, hardware and software approaches, standards, and the vendor landscape
+site_url: https://iamtgray.github.io/cross-domain-solutions/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: amber
+  features:
+    - navigation.footer
+    - navigation.indexes
+    - navigation.top
+    - navigation.sections
+    - navigation.expand
+    - toc.integrate
+    - content.code.copy
+  icon:
+    logo: material/shield-half-full
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+nav:
+  - Home: index.md
+
+  - Understanding CDS:
+    - learn/index.md
+    - What is a CDS?: learn/what-is-a-cds.md
+    - Why CDS Matters: learn/why-cds-matters.md
+    - The Three Types of CDS: learn/three-types.md
+
+  - How CDS Works:
+    - learn/how-it-works/index.md
+    - Data Flow Models: learn/how-it-works/data-flow.md
+    - Protocol Break: learn/how-it-works/protocol-break.md
+    - Treatments and Transforms: learn/how-it-works/treatments.md
+    - Security Enforcement: learn/how-it-works/security-enforcement.md
+
+  - Hardware CDS:
+    - learn/hardware/index.md
+    - Data Diodes: learn/hardware/data-diodes.md
+    - Guards: learn/hardware/guards.md
+    - Key Characteristics: learn/hardware/characteristics.md
+
+  - Software CDS:
+    - learn/software/index.md
+    - Key Considerations: learn/software/considerations.md
+    - Architectures: learn/software/architectures.md
+    - Hardware vs Software: learn/software/hardware-vs-software.md
+
+  - Standards and Classification:
+    - learn/standards/index.md
+    - International Standards: learn/standards/international.md
+    - Certification and Evaluation: learn/standards/certification.md
+    - Classification Systems: learn/standards/classification.md
+
+  - The Landscape:
+    - learn/landscape/index.md
+    - Vendors and Products: learn/landscape/vendors.md
+    - National Approaches: learn/landscape/national-approaches.md
+    - Academic Research and Open Problems: learn/landscape/research.md
+
+  - Reference:
+    - Glossary: glossary.md
