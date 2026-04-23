@@ -194,14 +194,26 @@ The AWS Nitro System is the most architecturally interesting convergence between
 - **Firmware is immutable** -- EC2 servers can't update their own firmware. Only AWS can update it through the Nitro System.
 - **All I/O runs on dedicated Nitro Cards**, off the general-purpose processor. Security group enforcement, encryption, and storage all happen in hardware.
 
+#### Formal verification of Nitro
+
+AWS has applied formal methods to Nitro components at increasing levels of ambition:
+
+**The Nitro Isolation Engine (NIE)** -- announced at re:Invent 2025 and described as "the world's first formally verified cloud hypervisor" -- has been verified using the Isabelle/HOL proof assistant (the same tool used for seL4). The proof covers specifications of the Graviton-5 processor architecture, the Rust code of hypercalls and their functional correctness, and security properties of the isolation mechanism. It runs to approximately 250,000 lines of formal proof. Larry Paulson (emeritus professor of computational logic at Cambridge, Amazon Scholar) and John Harrison (AWS Senior Principal Applied Scientist) are among the researchers behind the work.
+
+**Nitro Controller boot code** has been formally verified for memory safety -- proven free from buffer overflows, use-after-free, and similar memory corruption in the secure boot path (referenced in the AWS Nitro System Security Design whitepaper, with the underlying work published at CAV 2018).
+
+**Nitro Controller network API** parsing has been proven free from memory safety errors "in the face of any configuration file and any network input" -- a universal proof, not just testing against sample inputs.
+
+This is a significant development. But it's worth understanding the boundaries: the NIE proof artifacts aren't publicly available for independent scrutiny (unlike seL4's), binary-level refinement hasn't been confirmed, and information-flow (noninterference) proofs -- the gold standard for isolation assurance -- aren't explicitly claimed. No part of the Nitro System has undergone Common Criteria evaluation. The formal verification provides strong assurance for the specific properties proven, but the composition of all Nitro components into an end-to-end security argument hasn't been published.
+
 ??? question "How does Nitro map to MILS properties?"
 
     | MILS property | Nitro equivalent | Gap |
     |---------------|-----------------|-----|
-    | Non-bypassable | Hardware-enforced partition boundaries | No formal proof of non-bypassability |
-    | Evaluatable | Minimal hypervisor is architecturally simple | No CC evaluation, no formal verification |
-    | Always-invoked | All I/O mediated by Nitro Cards | No proof of complete mediation |
-    | Tamperproof | Immutable firmware, measured boot | No formal tamperproofing verification |
+    | Non-bypassable | Hardware-enforced partition boundaries | NIE formally verified, but no published noninterference proof |
+    | Evaluatable | Minimal hypervisor, formally verified in Isabelle/HOL | No CC evaluation; proof artifacts not public |
+    | Always-invoked | All I/O mediated by Nitro Cards | No published proof of complete mediation |
+    | Tamperproof | Immutable firmware, measured boot | Boot code memory safety formally proven |
 
 ### Confidential computing: hardware memory encryption
 
@@ -213,7 +225,7 @@ AMD SEV-SNP, Intel TDX, and ARM CCA provide hardware-enforced memory encryption 
 | **Intel TDX** | Encrypted "trust domains" | Attestation-gated data release |
 | **ARM CCA** | Secure "realms" | Hardware memory isolation between workloads |
 
-**What confidential computing doesn't provide:** no covert channel mitigation (side-channel attacks have been demonstrated against all platforms), no formal verification, no information flow control, no security labelling, no availability guarantees. The assurance gap between these technologies and a certified separation kernel remains significant.
+**What confidential computing doesn't provide:** no information flow control, no security labelling, no availability guarantees. Side-channel attacks have been demonstrated against all these platforms in lab conditions, though the practical exploitability in cloud environments is more nuanced (see below). The assurance gap between these technologies and a certified separation kernel remains significant.
 
 ### Cloud multi-account as MSL
 
@@ -221,14 +233,19 @@ The standard cloud security pattern for classified workloads is essentially MSL 
 
 This is architecturally identical to traditional MSL -- separate systems at separate levels, connected only through CDS at the boundaries. Cloud multi-account strategies don't introduce MLS or MILS; they replicate MSL.
 
+### Covert channels and low-visibility architectures
+
+Traditional side-channel attacks -- cache timing, branch predictor state, power analysis -- assume the attacker knows which physical hardware the target is running on. In cloud, this assumption breaks down. AWS's architecture is deliberately opaque: no one person knows both which customer is running which workload and which physical server it's on. An attacker who can't solve the co-location problem -- getting their malicious VM onto the same physical host as the target -- can't mount most side-channel attacks regardless of whether the theoretical channel exists.
+
+This isn't a formal closure of covert channels in the way that a separation kernel proof would be. But it's a practical barrier that on-premises systems don't have. The attacker's problem goes from "exploit this cache timing side-channel" to "first find the target among millions of servers, then get yourself scheduled onto the same host, then exploit the channel before either of you gets migrated." Combined with features like dedicated instances, dedicated hosts, and Nitro Enclaves (which provide additional cryptographic isolation), cloud providers can offer layered mitigations that make covert channel exploitation operationally very difficult -- even if theoretically possible.
+
 ### The gap
 
-The honest assessment is that cloud infrastructure today provides **MSL with stronger isolation properties than traditional MSL** (Nitro's minimal hypervisor, hardware memory encryption, immutable firmware), but falls well short of MILS assurance:
+The honest assessment is that cloud infrastructure today provides **MSL with stronger isolation properties than traditional MSL** -- and the Nitro Isolation Engine's formal verification is a genuine step toward MILS-grade assurance. But gaps remain:
 
-- No formal verification of the hypervisor or security mechanisms
 - No CC evaluation against a CDS protection profile
-- No information flow proofs
-- No covert channel analysis or mitigation
+- No published information-flow (noninterference) proofs
+- No end-to-end composition of verified components into a system-level security argument
 - Platform under the cloud provider's physical control, not the operator's
 
 ---
@@ -256,7 +273,7 @@ Several developments are closing the gap between hardware and software CDS assur
 
 !!! warning "The covert channel barrier"
 
-    The hardest remaining problem for software CDS is covert channels. Even with formal verification, side channels through shared hardware (caches, TLBs, branch predictors, power consumption) remain difficult to eliminate entirely. Hardware CDS with physical one-way paths (data diodes) have an inherent advantage here that software can't match. This is why TOP SECRET is likely to remain hardware-only for the foreseeable future.
+    The hardest remaining problem for software CDS is covert channels. Even with formal verification, side channels through shared hardware (caches, TLBs, branch predictors, power consumption) are difficult to eliminate entirely. Hardware CDS with physical one-way paths (data diodes) have an inherent advantage here. Cloud's low-visibility architecture makes these channels much harder to exploit in practice -- but "hard to exploit" isn't the same as "provably absent," and certification bodies need the latter. This is why TOP SECRET is likely to remain hardware-only for the foreseeable future, even as cloud assurance improves at lower classifications.
 
 ### What to watch
 
@@ -266,7 +283,7 @@ Several developments are closing the gap between hardware and software CDS assur
 
 **certMILS methodology** -- Compositional certification is the enabler that allows high-assurance kernels and lower-assurance components to be combined into a certified system. Watch for adoption by national evaluation authorities beyond BSI.
 
-**AWS Nitro evolution** -- If AWS pursues formal verification or CC evaluation of Nitro components (unlikely but not impossible), the cloud MILS gap would narrow significantly.
+**AWS Nitro evolution** -- The Nitro Isolation Engine's formal verification is a landmark, but the next steps matter more: published information-flow proofs, public proof artifacts for independent scrutiny, and potentially CC evaluation against a CDS protection profile. If AWS extends the Isabelle/HOL work to cover noninterference properties, Nitro's assurance argument starts looking comparable to traditional separation kernels.
 
 ---
 
