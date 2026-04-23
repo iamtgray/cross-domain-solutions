@@ -152,17 +152,6 @@ Continuous data flow from source to consumer, mediated by the CDS. Streaming nat
 
 ---
 
-## Choosing a Flow Model
-
-| Factor | Unidirectional | Bidirectional | Multi-Level |
-|---|---|---|---|
-| **Confidentiality risk** | Lowest | Higher | Highest |
-| **Integrity risk** | Focused on one direction | Both directions | Complex |
-| **Inspection depth** | Can be thorough | Constrained by latency | Varies by flow pair |
-| **Implementation complexity** | Simplest | Moderate | Highest |
-| **Accreditation burden** | Lowest | Moderate | Highest |
-| **Operational flexibility** | Most limited | Good | Most flexible |
-
 The NCSC's overarching guidance: use defence in depth and consider the CDS as an end-to-end system. "Include as much of the full end-to-end system involved in transferring information as practical."
 
 For more on the mechanisms that enforce these flow models, see [Protocol Break](protocol-break.md), [Treatments](treatments.md), and [Security Enforcement](security-enforcement.md).

@@ -44,37 +44,42 @@ Protocol break operates at the network and transport layers. [Content treatments
 
 ---
 
-## How It Works: Step by Step
+## How it works
 
 The architecture follows the NCSC's import pipeline pattern, placing complex processing on the untrusted side and simple verification on the trusted side:
 
-**1. Terminate the inbound connection**
+``` mermaid
+flowchart LR
+    subgraph untrusted["Untrusted side"]
+        direction TB
+        A["1. Terminate inbound<br/>connection"] --> B["2. Extract data<br/>payload"]
+        B --> C["3. Transform to<br/>simpler format"]
+    end
 
-The CDS accepts the connection from the source domain, acting as a full protocol endpoint. The original network session ends here. No packets pass through.
+    subgraph break["Boundary"]
+        direction TB
+        D["4. Pass via simplified<br/>protocol<br/>(hardware-enforced)"]
+    end
 
-**2. Extract the data payload**
+    subgraph trusted["Trusted side"]
+        direction TB
+        E["5. Verify structure<br/>and semantics"] --> F["6. Reconstruct in<br/>clean protocol headers"]
+    end
 
-The CDS strips the protocol headers, session information, and transport metadata. Only the content payload is retained.
+    C --> D --> E
 
-**3. Transform (untrusted side)**
+    style untrusted fill:#b71c1c,color:#fff,stroke:#b71c1c
+    style break fill:#4a148c,color:#fff,stroke:#4a148c
+    style trusted fill:#1b5e20,color:#fff,stroke:#1b5e20
+```
 
-Complex data formats are converted into simpler, verifiable formats. The NCSC places the transformation engine deliberately on the untrusted side because "we assume that the transformation engine could be compromised." This is intentional: the complex, potentially vulnerable processing happens where a compromise is least damaging.
+The original network session ends at step 1 -- no packets pass through. The CDS strips all protocol headers, session state, and transport metadata (step 2), then converts complex data formats into simpler, verifiable forms (step 3). The NCSC places this transformation engine deliberately on the untrusted side because "we assume that the transformation engine could be compromised" -- the complex, potentially vulnerable processing happens where a compromise is least damaging.
 
-**4. Pass via simplified protocol**
-
-The extracted and transformed payload crosses the boundary via a minimal internal transport. This is often hardware-enforced -- the NCSC specifies "hardware enforced one way flow" for both import and export paths. The simplified protocol provides "a simple transport mechanism" with minimal features and minimal attack surface.
-
-**5. Verify (trusted side)**
-
-On the trusted side, a verification engine performs syntactic checks ("the structure and syntax of the object are correct") and semantic checks ("the meaning is valid in the context of the operation or business process"). Because the data has been simplified by the transformation step, verification is tractable.
-
-**6. Reconstruct and deliver**
-
-Approved data is wrapped "in known good protocol headers" and delivered to the destination via a new, independent protocol session. The destination system receives clean data via a clean connection that has no relationship to the original inbound session.
+The simplified payload crosses the boundary via a minimal internal transport (step 4), often hardware-enforced. On the trusted side, a verification engine checks structure and semantics (step 5) before wrapping approved data in "known good protocol headers" and delivering it via a completely new connection (step 6).
 
 !!! info "The key insight"
 
-    The architecture is deliberately asymmetric. Complex, dangerous processing (parsing untrusted formats, handling full application protocols) happens on the untrusted side. Simple, verifiable processing (checking structure and semantics of already-simplified data) happens on the trusted side. The hardware-enforced break between them means that even if the transformation engine is compromised, it cannot contaminate the trusted side.
+    The architecture is deliberately asymmetric. Complex, dangerous processing happens on the untrusted side. Simple, verifiable checking happens on the trusted side. The hardware-enforced break between them means that even if the transformation engine is compromised, it can't contaminate the trusted side.
 
 ---
 
