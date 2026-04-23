@@ -237,7 +237,11 @@ This is architecturally identical to traditional MSL -- separate systems at sepa
 
 Traditional side-channel attacks -- cache timing, branch predictor state, power analysis -- assume the attacker knows which physical hardware the target is running on. In cloud, this assumption breaks down. AWS's architecture is deliberately opaque: no one person knows both which customer is running which workload and which physical server it's on. An attacker who can't solve the co-location problem -- getting their malicious VM onto the same physical host as the target -- can't mount most side-channel attacks regardless of whether the theoretical channel exists.
 
-This isn't a formal closure of covert channels in the way that a separation kernel proof would be. But it's a practical barrier that on-premises systems don't have. The attacker's problem goes from "exploit this cache timing side-channel" to "first find the target among millions of servers, then get yourself scheduled onto the same host, then exploit the channel before either of you gets migrated." Combined with features like dedicated instances, dedicated hosts, and Nitro Enclaves (which provide additional cryptographic isolation), cloud providers can offer layered mitigations that make covert channel exploitation operationally very difficult -- even if theoretically possible.
+This isn't a formal closure of covert channels in the way that a separation kernel proof would be. But it's a practical barrier that on-premises systems don't have. The attacker's problem goes from "exploit this cache timing side-channel" to "first find the target among millions of servers, then get yourself scheduled onto the same host, then exploit the channel before either of you gets migrated."
+
+AWS goes further than opacity alone. The Nitro System's default EC2 isolation already prevents cross-tenant CPU side-channels -- cores are pinned to instances, SMT threads are never shared between customers, and microarchitectural state is flushed on context switches. But for workloads where even theoretical co-residency is unacceptable, EC2 Dedicated Hosts give you an entire physical server (i.e. the actual underlying machine, not just a VM). No other customer's instances can be scheduled on that hardware while it's allocated to you. This eliminates the co-location prerequisite for side-channel attacks entirely -- not through software mitigation, but by removing the physical precondition. The US Air Force's GPS OCX programme runs on 200+ dedicated hosts in GovCloud for exactly this reason.
+
+Layered with Nitro Enclaves (which provide cryptographically isolated compute where even root on the parent instance can't access enclave memory) and confidential computing (AMD SEV-SNP, Intel TDX), cloud providers can offer defence-in-depth that makes covert channel exploitation operationally very difficult -- even if theoretically possible.
 
 ### The gap
 
@@ -247,43 +251,6 @@ The honest assessment is that cloud infrastructure today provides **MSL with str
 - No published information-flow (noninterference) proofs
 - No end-to-end composition of verified components into a system-level security argument
 - Platform under the cloud provider's physical control, not the operator's
-
----
-
-## The opportunity for software CDS
-
-Several developments are closing the gap between hardware and software CDS assurance:
-
-**Formal verification has become practical.** seL4 demonstrated that a production microkernel can be formally verified to binary level, providing assurance that exceeds the most stringent certification schemes. A software CDS built on a formally verified separation kernel inherits this for the platform layer.
-
-**Memory-safe languages eliminate vulnerability classes.** Rust, SPARK/Ada, and similar languages prevent buffer overflows, use-after-free, and other memory corruption at compile time. PikeOS supports Rust within partitions. Muen is written entirely in SPARK 2014. A guard written in Rust on a verified kernel has a dramatically smaller attack surface than one written in C on a commodity OS.
-
-**Compositional certification has a methodology.** The certMILS programme developed and validated compositional security certification across three industrial pilots. The path from individually certified components to a system-level assurance argument is now documented.
-
-**BSI has broken the hardware-only assumption.** genua's genugate Virtual became the first virtualised firewall to achieve CC EAL 4+ and BSI approval for classified information (VS-NfD, equivalent to NATO RESTRICTED). This demonstrates that a national security authority is willing to certify virtualised security products for classified processing.
-
-### The trajectory
-
-| Classification | Software CDS status | Timeframe |
-|---------------|-------------------|-----------|
-| **RESTRICTED / CUI** | Already happening (genua BSI-approved virtualised products) | Now |
-| **CONFIDENTIAL** | Feasible with MILS separation kernels (PikeOS EAL 5+, INTEGRITY EAL 6+) and certified guard components | Near-term |
-| **SECRET** | Requires formally verified kernel + formally verified guard logic, compositionally certified | Medium-term (5--10 years) |
-| **TOP SECRET** | Hardware CDS remains required -- data diodes for critical one-way flows | Foreseeable future |
-
-!!! warning "The covert channel barrier"
-
-    The hardest remaining problem for software CDS is covert channels. Even with formal verification, side channels through shared hardware (caches, TLBs, branch predictors, power consumption) are difficult to eliminate entirely. Hardware CDS with physical one-way paths (data diodes) have an inherent advantage here. Cloud's low-visibility architecture makes these channels much harder to exploit in practice -- but "hard to exploit" isn't the same as "provably absent," and certification bodies need the latter. This is why TOP SECRET is likely to remain hardware-only for the foreseeable future, even as cloud assurance improves at lower classifications.
-
-### What to watch
-
-**genua** (Germany) -- BSI-certified virtualised CDS, quantum-resistant cryptography, MILS architecture. The most progressive approach to resolving the assurance-vs-agility tension in CDS.
-
-**seL4** -- If a CDS guard is built on seL4 with formally verified application logic, the resulting assurance argument would be stronger than many existing hardware CDS products. No one has done this yet, but the pieces exist.
-
-**certMILS methodology** -- Compositional certification is the enabler that allows high-assurance kernels and lower-assurance components to be combined into a certified system. Watch for adoption by national evaluation authorities beyond BSI.
-
-**AWS Nitro evolution** -- The Nitro Isolation Engine's formal verification is a landmark, but the next steps matter more: published information-flow proofs, public proof artifacts for independent scrutiny, and potentially CC evaluation against a CDS protection profile. If AWS extends the Isabelle/HOL work to cover noninterference properties, Nitro's assurance argument starts looking comparable to traditional separation kernels.
 
 ---
 

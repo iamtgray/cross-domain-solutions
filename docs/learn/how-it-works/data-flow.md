@@ -42,13 +42,7 @@ In plain English: trust flows downward, never upward. A trusted system should no
 
 Data flows from a higher-classification domain to a lower-classification domain. The security concern is **confidentiality**: ensuring that released data does not contain information classified above the lower domain's ceiling.
 
-This violates Bell-LaPadula's star property, so it requires trusted release mechanisms:
-
-| Pattern | How it works | Assurance |
-|---|---|---|
-| **Human-review guard** | A trained reviewer examines each transfer, redacts classified content, approves release | Highest (but lowest throughput) |
-| **Automated guard** | Content undergoes label checking, dirty word search, deep inspection, CDR; policy engine makes release decision | High |
-| **Data diode (high-to-low)** | Hardware-enforced one-way flow publishes data that is known releasable by design | Highest for directionality |
+This violates Bell-LaPadula's star property, so it requires a trusted release mechanism -- something or someone formally authorised to make the downgrade decision. At one end, a human reviewer examines each transfer, redacts classified content, and approves the release (highest assurance, lowest throughput). At the other, an automated guard runs the content through label checking, dirty word search, deep inspection, and CDR before a policy engine makes the release decision. A high-to-low data diode can also serve this purpose for data that's known releasable by design (e.g. publishing pre-approved SCADA monitoring data).
 
 **Use cases:** publishing intelligence products to lower-classification consumers, releasing operational data to coalition partners, exporting SCADA monitoring data from control networks, publishing election results to public networks.
 
@@ -56,13 +50,7 @@ This violates Bell-LaPadula's star property, so it requires trusted release mech
 
 Data flows from a lower-classification domain to a higher-classification domain. The security concern is **integrity**: ensuring that imported data does not introduce malware, exploits, or corrupted content.
 
-This aligns with Bell-LaPadula (writing up is permitted) but raises Biba integrity concerns:
-
-| Pattern | How it works | Assurance |
-|---|---|---|
-| **Data diode (low-to-high)** | Hardware-enforced one-way flow ingests data from untrusted networks; prevents any data exfiltration from the high side | Highest |
-| **Import guard** | Automated pipeline: format verification, [CDR](treatments.md), malware scanning, schema validation | High |
-| **Quarantine and scan** | Files staged in isolation, scanned by multiple engines, released only after passing all checks | Moderate |
+This aligns with Bell-LaPadula (writing up is permitted) but raises Biba integrity concerns -- you're allowing untrusted content into a trusted system. A low-to-high data diode is the highest-assurance approach: hardware-enforced one-way flow ingests data while physically preventing any exfiltration from the high side. An import guard provides automated sanitisation (format verification, [CDR](treatments.md), malware scanning, schema validation) before accepting the data. For less time-sensitive transfers, quarantine-and-scan approaches stage files in isolation and run them through multiple scanning engines before release.
 
 **Use cases:** ingesting open-source intelligence into classified analytic systems, importing threat intelligence feeds, pulling software updates into air-gapped environments, collecting sensor data from field systems.
 
@@ -87,7 +75,7 @@ The CDS must prevent data exfiltration and block malicious imports at the same t
 
 **Bidirectional guard:** A single [guard](../three-types.md) that handles both directions, applying different inspection pipelines depending on flow direction. Typically implemented as a dual-homed application-layer proxy with direction-aware [policy enforcement](security-enforcement.md).
 
-**Paired data diodes:** Two data diodes in opposite directions, each providing hardware-enforced unidirectional flow. Software proxies on each side handle protocol emulation. ST Engineering uses this approach to enable real-time bidirectional HTTP(S) transactions.
+**Paired data diodes:** Two data diodes in opposite directions, each providing hardware-enforced unidirectional flow. Software proxies on each side handle protocol reconstruction -- reassembling request/response pairs across the two one-way channels.
 
 ### Covert Channel Risk
 
