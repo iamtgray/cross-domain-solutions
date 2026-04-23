@@ -73,33 +73,33 @@ STANAG 4778 (ADatP-4778) defines how labels are bound to the data they protect:
 
 ---
 
-## Access Control Models
+## How a CDS decides what gets through
 
-### Mandatory Access Control (MAC)
+Every CDS enforces access control -- the system decides whether data may cross the boundary, and that decision isn't optional or overridable. But the way that decision gets made has evolved.
 
-CDS fundamentally implement mandatory access control -- the system enforces security policy regardless of user preferences. This is "near-certain enforcement of multilevel security policies" using a risk avoidance approach, in contrast to discretionary access control (DAC) where enforcement is at the user's discretion.
+### The basics: mandatory access control
 
-[Multi-level solutions](../three-types.md) specifically use "trusted labelling and integrated Mandatory Access Control (MAC) schema as a basis to mediate data flow and access according to user credentials."
+The simplest form: compare the data's classification against the destination domain's clearance. SECRET data can't flow to an UNCLASSIFIED network. This is mandatory access control (MAC) -- the system enforces the [Bell-LaPadula and Biba rules](../three-types.md) regardless of what any user wants. It's the opposite of discretionary access control (where users decide who gets access to their files).
 
-The [Bell-LaPadula and Biba models](data-flow.md) provide the theoretical framework. MAC is what makes those models concrete in a running system.
+MAC works well for straightforward high/low boundaries. But real-world CDS decisions are rarely that simple -- data might be SECRET but also releasable only to specific nations, restricted to a particular programme, or carrying caveats that limit its handling.
 
-### Confidentiality Metadata-Based Access Control (CMBAC)
+### Adding attributes: ABAC
 
-NATO's access control model is called CMBAC (pronounced "come back"), defined in STANAG 4474. It works by comparing security labels against security clearances within the context of a Security Policy Information File (SPIF).
+Attribute-Based Access Control goes beyond simple classification hierarchies. Instead of just asking "is this SECRET?", the system considers multiple attributes of the data, the recipient, and the context:
 
-Enforcement happens at three points:
+- **Data attributes** -- classification, releasability (e.g. "Releasable To: AUS, GBR, USA"), programme caveats, content type
+- **Recipient attributes** -- clearance level, nationality, programme membership, role
+- **Context** -- which network, what time, what operational context
 
-1. **Local delivery authorisation** -- validates the recipient's clearance against the data's label
-2. **Onward transfer authorisation** -- checks that the channel's clearance permits the data
-3. **Label transformation** -- maps between different policies or formats at cross-domain boundaries
+The STANAG 4774 category mechanism already supports this -- categories can encode nationality restrictions, programme membership, and other attributes beyond simple classification. In practice, most modern CDS policy decisions are ABAC even when the underlying label infrastructure looks like traditional MAC.
 
-The SPIF manages label structure definitions, display markings (including multilingual support), access control rules, and policy equivalence mappings for cross-domain scenarios.
+For a deeper look at how ABAC works with security labels and data-centric security, see [Data-Centric Security on AWS](https://iamtgray.github.io/dcs-data-exchange/).
 
-### Attribute-Based Access Control (ABAC)
+### NATO's model: CMBAC
 
-While traditional CDS relies on hierarchical classification, modern implementations increasingly incorporate ABAC concepts. The STANAG 4774 category mechanism supports this -- categories can encode arbitrary attributes (nationality, programme membership, operational context) that go beyond simple classification levels.
+NATO formalises this as CMBAC (Confidentiality Metadata-Based Access Control, pronounced "come back"), defined in STANAG 4474. It works by comparing [STANAG 4774 security labels](#stanag-4774-label-syntax) against security clearances within the context of a Security Policy Information File (SPIF) -- essentially a machine-readable rulebook that defines what each label means and who may receive data carrying it.
 
-The NCSC design principles describe export control as requiring layered authorisation that considers data attributes, user attributes, and contextual factors. This is ABAC in practice, even if the label infrastructure is rooted in MAC.
+The SPIF handles label structure definitions, display markings (including multilingual support), access control rules, and policy equivalence mappings for cross-domain scenarios (i.e. translating between different national security policies at a coalition boundary).
 
 ---
 

@@ -95,7 +95,11 @@ The CDS terminates the SMTP session, extracts the message envelope (sender, reci
 
 ### XMPP (Chat and Messaging)
 
-The Isode M-Guard operates as "an application level data diode, with traffic flowing in one direction only" for XMPP traffic. It uses GCXP -- which "transfers a stream of XML Messages" via CBOR framing over TLS -- as the simplified boundary protocol. Guards are commonly deployed in pairs for bidirectional chat.
+The CDS terminates the XMPP session, extracts the XML stanzas (including any [STANAG 4774 security labels](security-enforcement.md)), and passes validated content across the boundary via a simplified internal protocol before reconstructing a new XMPP session on the other side. Isode's M-Guard is the best-documented example -- it uses GCXP (Guard Content eXchange Protocol), which is built from open standards (CBOR framing per RFC 8949 over TLS) but is itself a vendor specification rather than an independent standard. No open standard exists for the simplified boundary transport layer; the NCSC deliberately leaves this to the implementer. Guards are commonly deployed in pairs for bidirectional chat.
+
+??? note "Open-source boundary transport"
+
+    ANSSI (the French national cybersecurity agency) publishes [lidi](https://github.com/ANSSI-FR/lidi) -- an open-source tool (Rust, LGPL-3.0) for reliable unidirectional transfer across data diode links using RaptorQ forward error correction. It solves the transport layer problem but doesn't include content inspection or security label checking. It's the closest open-source building block for the simplified boundary protocol, though you'd still need to build the guard logic on top.
 
 ### Database
 
