@@ -6,11 +6,11 @@ A CDS is only as useful as the policy it enforces. This page covers the mechanis
 
 ## Security Labels
 
-Security labels are machine-readable metadata tags attached to data objects that encode their classification, handling caveats, and release constraints. Without them, a CDS cannot make automated policy decisions about what may cross a boundary.
+Security labels are machine-readable metadata tags attached to data objects that encode their classification, handling caveats, and release constraints. Without them, a CDS cannot make automated policy decisions about what may cross a boundary. For a practical deep-dive on implementing security labels (including hands-on labs), see [Data-Centric Security](https://datacentricsecurity.org/labs/overview/the-problem/) -- which covers why labels exist, how they work, and how to build systems around them.
 
 ### STANAG 4774: Label Syntax
 
-NATO's STANAG 4774 (ADatP-4774) defines the standard syntax for confidentiality labels. It supports XML, JSON, and CBOR encodings, and a label contains:
+NATO's STANAG 4774 (ADatP-4774) defines the standard syntax for confidentiality labels. For a comprehensive reference covering all NATO DCS standards (including 4774, 4778, ZTDF, and ACP-240), see the [NATO STANAGs reference on datacentricsecurity.org](https://datacentricsecurity.org/documents/nato-stanags/). The standard supports XML, JSON, and CBOR encodings, and a label contains:
 
 Policy Identifier
 :   A globally unique OID identifying which security policy applies (e.g., the NATO security policy, or a national policy).
@@ -63,13 +63,15 @@ STANAG 4778 (ADatP-4778) defines how labels are bound to the data they protect:
 
 !!! info "STANAGs 4774 and 4778 are the closest thing to a universal CDS standard"
 
-    For security labelling, these two NATO standards are the most widely referenced across all national approaches. They are not universally implemented, but they represent the strongest candidate for international CDS interoperability. If you are designing a CDS and want to future-proof for coalition operations, use STANAGs 4774/4778.
+    For security labelling, these two NATO standards are the most widely referenced across all national approaches. They aren't universally implemented, but they represent the strongest candidate for international CDS interoperability. If you're designing a CDS and want to future-proof for coalition operations, use STANAGs 4774/4778. For hands-on implementation with labs and architecture patterns, see the [security labels overview](https://datacentricsecurity.org/labs/overview/nato-standards/) and [Lab 1: Security Labels](https://datacentricsecurity.org/labs/lab1/) on datacentricsecurity.org.
 
 ### Other Label Standards
 
 **IC-ISM (Intelligence Community Information Security Marking):** The US Intelligence Community standard for security marking metadata, defined as XML Schema. Encodes classification, dissemination controls, releasability, and handling caveats for intelligence products.
 
 **ESS Security Labels (RFC 2634):** Used in S/MIME email and STANAG 4406 military messaging. Structure parallels STANAG 4774. STANAG 4774 is "expected to become the dominant label format for military use."
+
+**Trusted Data Format (TDF/ZTDF):** [OpenTDF](https://github.com/opentdf/platform) is an open-source data-centric encryption format (originally created at the NSA) that wraps content with AES-256-GCM encryption and ABAC-driven access policy. Its assertion mechanism explicitly supports STANAG 4774 labels with JWS cryptographic binding. NATO's Zero Trust Data Format (ZTDF) extends OpenTDF with NATO-specific cryptographic assertions. TDF doesn't replace a CDS guard (the encrypted payload is opaque to content inspection), but it provides a complementary **post-guard protection layer** -- the guard inspects content in cleartext, then wraps approved output in TDF for persistent encryption and access control in the destination domain. For implementation details, see [Level 3: Cryptographic Protection](https://datacentricsecurity.org/architectures/aws-dcs-level-3-encryption/overview/) on datacentricsecurity.org.
 
 ---
 
@@ -93,7 +95,7 @@ Attribute-Based Access Control goes beyond simple classification hierarchies. In
 
 The STANAG 4774 category mechanism already supports this -- categories can encode nationality restrictions, programme membership, and other attributes beyond simple classification. In practice, most modern CDS policy decisions are ABAC even when the underlying label infrastructure looks like traditional MAC.
 
-For a deeper look at how ABAC works with security labels and data-centric security, see [Data-Centric Security on AWS](https://iamtgray.github.io/dcs-data-exchange/).
+For a deeper look at how ABAC works with security labels -- including Cedar policy examples, multi-national federation, and test scenarios -- see [Lab 2: ABAC](https://datacentricsecurity.org/labs/lab2/) and the [Level 2 ABAC architecture](https://datacentricsecurity.org/architectures/aws-dcs-level-2-abac/overview/) on datacentricsecurity.org.
 
 ### NATO's model: CMBAC
 
