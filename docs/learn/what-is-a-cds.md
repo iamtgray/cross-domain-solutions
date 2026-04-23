@@ -93,17 +93,23 @@ The market has grown to [$3.75 billion (2025)](why-cds-matters.md), with the top
 
 ## CDS and Multi-Level Security
 
-CDS and multilevel security (MLS) are closely related but distinct. Understanding the distinction matters because it affects architecture choices.
+CDS and multilevel security (MLS) are closely related but distinct. Understanding the distinction matters because it shapes every architecture decision -- and explains where the field is heading.
 
-MLS
-:   A system that processes information at multiple classification levels simultaneously, using mandatory access control and security labels to enforce access rules based on user clearance and data classification. An MLS system is effectively an "all-in-one CDS, encompassing both access and data transfer capabilities."
+There are three approaches to handling multiple classification levels:
 
-Multiple Single Level (MSL)
-:   An architecture that maintains strict physical or logical separation of domains, with each domain operating at a single security level. CDS components (guards, diodes, filters) mediate transfers between these separated domains. This is what most real-world CDS deployments use.
+**MLS (Multi-Level Security)**
+:   One system processes information at multiple classification levels simultaneously, relying on mandatory access controls to keep them apart. The original 1970s dream. It mostly failed -- only three systems ever achieved the highest Orange Book (A1) certification, and none achieved commercial success.
 
-MILS (Multiple Independent Levels of Security)
-:   A high-assurance architecture that uses a separation kernel to create strongly isolated partitions on a single hardware platform, with controlled information flow between partitions. MILS components must satisfy the NEAT properties: Non-bypassable, Evaluatable, Always-invoked, and Tamperproof.
+**MSL (Multiple Single Level)**
+:   Each classification level gets its own physically separated system. CDS components (guards, diodes) sit at the boundaries to mediate transfers. This is what almost every real-world CDS deployment uses today, including the US government's own NIPRNet/SIPRNet/JWICS architecture.
 
-Most deployed CDS systems use the MSL approach -- physically or logically separated domains with guards or diodes mediating the transfers between them. True MLS systems exist (Oracle Label Security, PitBull) but are limited to specific use cases and require extreme trust in the operating system's Trusted Computing Base.
+**MILS (Multiple Independent Levels of Security)**
+:   A small, verified separation kernel creates isolated partitions on shared hardware, with controlled information flow between them. Each partition runs at a single level (like MSL), but on shared hardware (like MLS), with the kernel providing mathematically verifiable separation. This is the most promising foundation for software-based CDS.
+
+Most deployed CDS systems use the MSL approach. True MLS remains limited to niche use cases. MILS is where the industry is heading -- particularly for software CDS and cloud environments.
+
+!!! info "This is a big topic"
+
+    The MLS/MSL/MILS distinction has deep implications for software CDS, cloud architectures, and the future of the field. We cover it in depth in **[MLS, MSL, and MILS](mls-msl-mils.md)** -- including why MLS failed, how separation kernels work, the state of the art (seL4, INTEGRITY-178B, PikeOS), and whether MILS concepts can translate to cloud.
 
 The [three types of CDS](three-types.md) map directly onto this distinction: access and transfer solutions typically use MSL, while multi-level solutions implement true MLS.
